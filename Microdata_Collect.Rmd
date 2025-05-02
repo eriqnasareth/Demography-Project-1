@@ -1,0 +1,58 @@
+---
+title: "Colecting DATASUS microdata"
+author: "Erick Nasareth"
+date: "2025-05-02"
+output: html_document
+---
+
+
+# Carregando pacotes
+
+```{r message=FALSE}
+if (!require(microdatasus)) remotes::install_github("rfsaldanha/microdatasus")
+if (!require(read.dbc)) install.packages("read.dbc", repos ="https://packagemanager.posit.co/cran/2024-07-05")
+
+```
+
+# Carregando pacotes necessários
+
+```{r message=FALSE}
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load("tidyverse", "readxl", "LexisPlotR", "stringr", "ggthemes", "microdatasus", "writexl")
+
+```
+
+# Dados do datasus
+
+```{r message=FALSE, waning=FALSE, echo=FALSE}
+obitos <- fetch_datasus(year_start = 2000, year_end = 2022, uf = "RS", information_system = "SIM-DO", vars = c("DTOBITO", "DTNASC", "IDADE", "SEXO"))
+
+```
+
+
+```{r}
+obitos <- process_sim(obitos)
+```
+
+
+```{r message=FALSE, waning=FALSE, echo=FALSE}
+nasc <- fetch_datasus(year_start = 2000, year_end = 2022, uf = "RS", information_system = "SINASC", vars = c("DTNASC", "SEXO"))
+```
+
+```{r}
+nasc <- process_sinasc(nasc)
+```
+
+
+
+```{r}
+
+write.csv2(obitos, "Data/Obitos_micro_2000-2022_RS.csv", row.names = FALSE)
+write.csv2(nasc, "Data/Nascimentos_micro_2000-2022_RS.csv", row.names = FALSE)
+
+```
+
+
+
+
+
