@@ -43,6 +43,10 @@ nasc <- fetch_datasus(year_start = 2000, year_end = 2022, uf = "RS", information
 nasc <- process_sinasc(nasc)
 ```
 
+```{r}
+obitos <- obitos %>%
+  select(c("DTOBITO", "DTNASC", "IDADE", "SEXO"))
+```
 
 
 ```{r}

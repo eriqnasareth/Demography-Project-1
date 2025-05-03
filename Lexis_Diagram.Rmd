@@ -1,0 +1,167 @@
+---
+title: "Lexis Diagram"
+author: "Erick Nasareth"
+date: "2025-05-02"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+
+```{r waning=F}
+# Bibliotecas
+
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load("tidyverse", "readxl", "LexisPlotR", "stringr", "ggthemes", "knitr", "lubridate")
+```
+
+
+
+```{r}
+# Bancos de dados
+
+sim <- read.csv2("Data/Obitos_micro_2000-2022_RS.csv")
+sinasc <- read.csv2("Data/Nascimentos_micro_2000-2022_RS.csv")
+```
+
+
+
+```{r echo=TRUE}
+# Função do Gabriel
+
+sim_idade <- function(x) {
+  # Funçao para idade
+  if (str_sub(x, 1, 1) < 4) {
+    x = 0
+  } else if (str_sub(x, 1, 1) == 4) {
+    x =  0 + as.numeric(str_sub(x, 2))
+  }
+  else if (str_sub(x, 1, 1) == 5) {
+    x = 100 + as.numeric(str_sub(x, 2))
+  }
+  else{
+    x = NA
+  }
+  return(x)
+}
+```
+
+
+
+# Ajustes nos dados do SIM
+
+```{r}
+# Remoção dos NA's nas colunas da data de nascimento e da idade
+
+sim <- sim[!is.na(sim$DTNASC), ]
+sim <- sim[!is.na(sim$IDADE), ]
+
+```
+
+
+```{r}
+# Ajustando os tipos das variavéis utilizadas
+
+sim <- sim %>%
+  mutate(DTNASC = as.Date(DTNASC), DTOBITO = as.Date(DTOBITO), IDADE = as.character(IDADE))
+```
+
+
+
+```{r}
+# Utilizando a função do Gabriel para decodificar as idades no banco do SIM
+
+sim$IDADE <- sapply(sim$IDADE, sim_idade)
+```
+
+```{r}
+sim_menor_5 <- sim %>%
+  filter(IDADE < 5)
+```
+
+```{r}
+sim_menor_5  <- sim_menor_5  %>%
+  mutate(Cohorte = year(DTNASC), Obito = year(DTOBITO))
+
+```
+
+
+```{r warning= F}
+sim_menor_5 <- sim_menor_5 %>%
+  group_by(Obito, Cohorte, IDADE) %>%
+  summarise(obitos = length(Obito), .groups = "keep") %>%
+  filter(IDADE <= Obito-Cohorte)
+
+
+```
+
+
+```{r}
+sim_menor_5 <- sim_menor_5 %>%
+  arrange(Obito, Cohorte, desc(IDADE))
+
+```
+
+
+
+# Ajustes nos dados do SINASC
+
+```{r}
+sinasc$DTNASC <- ymd(sinasc$DTNASC)
+sinasc$DTNASC <- year(sinasc$DTNASC)
+```
+
+
+```{r}
+# nascidos vivos a cada milhão de nascidos por ano
+
+nascidos_por_ano <- sinasc %>%
+  group_by(DTNASC) %>%
+  summarise(soma = floor(sum(DTNASC)/1000000))
+
+
+```
+
+
+
+# Lexis diagram
+
+```{r}
+datas <- data.frame(
+  anos = as.character(rep(seq(2000, 2022), each = 10)),
+  mes  = rep(c("04", "09"), 115),
+  dia  = rep("01", 230)
+  
+)
+
+
+datas <- datas %>%
+  mutate(data = as.Date(str_c(anos, "-", mes, "-", dia)))
+```
+
+
+```{r}
+lexis_grid(year_start = 2000, year_end = 2023, age_start = 0, age_end = 5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  annotate(              # Anotações nos gráficos
+    "text",
+    x     = seq(from = as.Date("2000-07-01"), to = as.Date("2022-07-01"), by = "year"),
+    y     = 0.2,
+    label = nascidos_por_ano$soma,
+    size  = 1.8, 
+    color = "red"
+    ) +
+  annotate(              
+    "text",
+    x     = datas$data,
+    y     = rep(seq(4.85, 0, -0.50), 23),
+    label = sim_menor_5$obitos,
+    size  = 1.8
+    )
+
+
+```
+
+
+
