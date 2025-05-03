@@ -3,17 +3,18 @@ title: "Lexis Diagram"
 author: "Erick Nasareth"
 date: "2025-05-02"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 
 
-```{r waning=F}
+```{r echo=FALSE, include=FALSE}
 # Bibliotecas
 
 if(!require(pacman)) install.packages("pacman")
 pacman::p_load("tidyverse", "readxl", "LexisPlotR", "stringr", "ggthemes", "knitr", "lubridate")
+#knitr::opts_chunk$set(include = FALSE)
 ```
 
 
@@ -118,14 +119,16 @@ sinasc$DTNASC <- year(sinasc$DTNASC)
 
 nascidos_por_ano <- sinasc %>%
   group_by(DTNASC) %>%
-  summarise(soma = floor(sum(DTNASC)/1000000))
+  summarise(soma = floor(n()/1000))
 
 
 ```
 
 
 
-# Lexis diagram
+# Questão a. Lexis diagram
+
+a) Construir o Diagrama de Lexis para os dados de nascidos vivos de 2000 a 2022 da UF escolhida (SINASC) e de óbitos menores de 5 anos (idades simples) para o mesmo período segundo ano de nascimento.
 
 ```{r}
 datas <- data.frame(
@@ -141,7 +144,7 @@ datas <- datas %>%
 ```
 
 
-```{r}
+```{r results=TRUE}
 lexis_grid(year_start = 2000, year_end = 2023, age_start = 0, age_end = 5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   annotate(              # Anotações nos gráficos
@@ -162,6 +165,72 @@ lexis_grid(year_start = 2000, year_end = 2023, age_start = 0, age_end = 5) +
 
 
 ```
+
+
+# Questão b. Probabilidade de sobrevivência a idade exata 5
+
+b) Supondo população fechada (inexistência de migração), calcule a probabilidade de um recém-nascido na UF ou território de escolha sobreviver à idade exata 5 para as coortes de 2000 a 2017.
+
+
+```{r}
+# criando o data frame que será utilizado para calcular as probabilidades
+
+survive_prob_5yo <- data.frame(
+  sim %>%
+    filter(IDADE < 5) %>%
+    mutate(cohorte = year(DTNASC)) %>%
+    filter(cohorte >= 2000 & cohorte <= 2017) %>%
+    group_by(cohorte) %>%
+    summarise(obitos = n()),
+  sinasc %>%
+    filter(DTNASC <= 2017) %>%
+    group_by(DTNASC) %>%
+    summarise(nascidos_vivos = n())
+)
+
+survive_prob_5yo <- survive_prob_5yo %>%
+  select(cohorte, obitos, nascidos_vivos) %>%
+  mutate(probabilidade = 1 - (obitos / nascidos_vivos))
+
+
+
+```
+
+
+```{r}
+kable(survive_prob_5yo)
+```
+
+
+
+# Questão c. Probabilidade de sobrevivência no primeiro ano de vida
+
+c) Considerando o mesmo pressuposto, calcule a probabilidade de sobreviver ao primeiro aniversário dos recém-nascidos no período de 2000 a 2020.
+
+```{r}
+survive_prob_1yo <- data.frame(
+  sim %>%
+    filter(IDADE < 1) %>%
+    mutate(cohorte = year(DTNASC)) %>%
+    filter(cohorte >= 2000 & cohorte <= 2020) %>%
+    group_by(cohorte) %>%
+    summarise(obitos = n()),
+  sinasc %>%
+    filter(DTNASC <= 2020) %>%
+    group_by(DTNASC) %>%
+    summarise(nascidos_vivos = n())
+)
+
+survive_prob_1yo <- survive_prob_1yo %>%
+  select(cohorte, obitos, nascidos_vivos) %>%
+  mutate(probabilidade = 1 - (obitos / nascidos_vivos))
+```
+
+
+```{r}
+kable(survive_prob_1yo)
+```
+
 
 
 
