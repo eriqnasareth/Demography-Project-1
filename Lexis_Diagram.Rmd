@@ -9,12 +9,12 @@ output:
 
 
 
-```{r echo=FALSE, include=FALSE}
+```{r include=FALSE}
 # Bibliotecas
 
 if(!require(pacman)) install.packages("pacman")
 pacman::p_load("tidyverse", "readxl", "LexisPlotR", "stringr", "ggthemes", "knitr", "lubridate")
-#knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
@@ -28,7 +28,7 @@ sinasc <- read.csv2("Data/Nascimentos_micro_2000-2022_RS.csv")
 
 
 
-```{r echo=TRUE}
+```{r}
 # Função do Gabriel
 
 sim_idade <- function(x) {
@@ -50,7 +50,6 @@ sim_idade <- function(x) {
 
 
 
-# Ajustes nos dados do SIM
 
 ```{r}
 # Remoção dos NA's nas colunas da data de nascimento e da idade
@@ -106,7 +105,6 @@ sim_menor_5 <- sim_menor_5 %>%
 
 
 
-# Ajustes nos dados do SINASC
 
 ```{r}
 sinasc$DTNASC <- ymd(sinasc$DTNASC)
@@ -126,7 +124,7 @@ nascidos_por_ano <- sinasc %>%
 
 
 
-# Questão a. Lexis diagram
+# Questão a. Diagrama de Lexis
 
 a) Construir o Diagrama de Lexis para os dados de nascidos vivos de 2000 a 2022 da UF escolhida (SINASC) e de óbitos menores de 5 anos (idades simples) para o mesmo período segundo ano de nascimento.
 
@@ -144,7 +142,7 @@ datas <- datas %>%
 ```
 
 
-```{r results=TRUE}
+```{r}
 lexis_grid(year_start = 2000, year_end = 2023, age_start = 0, age_end = 5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   annotate(              # Anotações nos gráficos
@@ -161,11 +159,23 @@ lexis_grid(year_start = 2000, year_end = 2023, age_start = 0, age_end = 5) +
     y     = rep(seq(4.85, 0, -0.50), 23),
     label = sim_menor_5$obitos,
     size  = 1.8
-    )
+    ) +
+  labs(
+    title = "Diagrama de lexis: Nascidos vivos e obitos de 2000 a 2022",
+    caption = "Fonte: DATASUS/SINASC/SIM\nObs: Nascidos vivos foram calculados a cada 1000 nascidos vivos",
+    ) +
+  theme(
+    plot.caption = element_text(
+      size = 8, 
+      color = "gray40",
+      hjust = 0,    # 0 = esquerda, 1 = direita
+      margin = margin(t = 10)  # Espaço acima do rodapé
+    ))
 
 
 ```
 
+\newpage
 
 # Questão b. Probabilidade de sobrevivência a idade exata 5
 
@@ -198,9 +208,11 @@ survive_prob_5yo <- survive_prob_5yo %>%
 
 
 ```{r}
-kable(survive_prob_5yo)
+kable(survive_prob_5yo, col.names = c("Coorte", "Obitos na Infância", "Nascidos Vivos", "P(Morrer < 5anos)"))
 ```
 
+
+\newpage
 
 
 # Questão c. Probabilidade de sobrevivência no primeiro ano de vida
@@ -228,7 +240,7 @@ survive_prob_1yo <- survive_prob_1yo %>%
 
 
 ```{r}
-kable(survive_prob_1yo)
+kable(survive_prob_1yo, col.names = c("Coorte", "Obitos Infantis", "Nascidos Vivos", "P(Morrer < 1ano)"))
 ```
 
 
